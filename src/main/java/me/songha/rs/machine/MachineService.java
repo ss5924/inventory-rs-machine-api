@@ -15,7 +15,7 @@ public class MachineService {
     private final MachineRepository machineRepository;
     private final RestTemplate restTemplate;
 
-    @Value("${api.base-url}")
+    @Value("${api.business-location-url}")
     private String baseUrl;
 
     @Cacheable(value = "Machine", key = "#id", cacheManager = "cacheManager")
