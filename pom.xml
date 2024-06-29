@@ -11,7 +11,7 @@
     <groupId>me.songha.rs</groupId>
     <artifactId>inventory-rs-machine-service</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <name>inventory-rs-machine-api</name>
+    <name>inventory-rs-machine-service</name>
     <description>inventory-rs-machine-service</description>
     <properties>
         <java.version>21</java.version>
