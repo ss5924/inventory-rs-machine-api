@@ -45,4 +45,14 @@ public class MachineDto {
         this.createAt = createAt;
         this.updateAt = updateAt;
     }
+
+    public MachineDto(Machine machine, BusinessLocationDto businessLocationDto) {
+        this.id = machine.getId();
+        this.businessLocationDto = businessLocationDto;
+        this.machineName = machine.getMachineName();
+        this.machineType = machine.getMachineType();
+        this.manufacturer = machine.getManufacturer();
+        this.createAt = machine.getCreateAt();
+        this.updateAt = machine.getUpdateAt();
+    }
 }

@@ -2,24 +2,31 @@ package me.songha.rs.machine;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 @RequiredArgsConstructor
 @Service
 public class MachineService {
     private final MachineRepository machineRepository;
     private final RestTemplate restTemplate;
+    private final ModelMapper modelMapper;
+    private final Environment environment;
+    private final ExecutorService executorService;
 
-    @Value("${api.business-location-url}")
+    @Value("${rs.service.url.business-location}")
     private String baseUrl;
 
-    @Cacheable(value = "Machine", key = "#id", cacheManager = "cacheManager")
-    public MachineDto getMachine(Long id) {
+    public MachineDto getMachineById(Long id) {
         Machine machine = machineRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Not found id " + id));
 
@@ -27,6 +34,18 @@ public class MachineService {
         MachineDto machineDto = machine.toMachineDto();
         machineDto.setBusinessLocationDto(businessLocationDto);
         return machineDto;
+    }
+
+    //    @Cacheable(value = "getMachinesByManufacturer", key = "#manufacturer", cacheManager = "cacheManager")
+    public List<MachineDto> getMachinesByManufacturer(String manufacturer) {
+        List<Machine> machines = machineRepository.findByManufacturer(manufacturer);
+        List<CompletableFuture<MachineDto>> futures = machines.stream()
+                .map(machine -> CompletableFuture.supplyAsync(() -> {
+                    BusinessLocationDto location = getBusinessLocationById(machine.getBusinessLocationId());
+                    return new MachineDto(machine, location);
+                }, executorService))
+                .toList();
+        return futures.stream().map(CompletableFuture::join).toList();
     }
 
     @Transactional
@@ -60,8 +79,11 @@ public class MachineService {
     }
 
     private BusinessLocationDto getBusinessLocationById(Long businessLocationId) {
+        if (environment.matchesProfiles("local")) {
+            return restTemplate.getForObject("http://192.168.0.37:30003/business-location/id/" + businessLocationId, BusinessLocationDto.class);
+        }
         try {
-            return restTemplate.getForObject(baseUrl + "/id/" + businessLocationId, BusinessLocationDto.class);
+            return restTemplate.getForObject(baseUrl + "/business-location/id/" + businessLocationId, BusinessLocationDto.class);
         } catch (HttpClientErrorException.NotFound e) {
             throw new ResourceNotFoundException("Not found BusinessLocationId " + businessLocationId);
         }

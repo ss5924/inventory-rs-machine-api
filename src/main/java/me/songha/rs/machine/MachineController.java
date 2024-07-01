@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(value = "/machine")
@@ -13,13 +15,19 @@ public class MachineController {
     private final MachineService machineService;
 
     @GetMapping(value = "/id/{id}")
-    public ResponseEntity<MachineDto> getMachineDto(@PathVariable Long id) {
+    public ResponseEntity<MachineDto> getMachineById(@PathVariable Long id) {
         try {
-            MachineDto machineDto = machineService.getMachine(id);
+            MachineDto machineDto = machineService.getMachineById(id);
             return ResponseEntity.ok(machineDto);
         } catch (ResourceNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
+    }
+
+    @GetMapping(value = "/manufacturer/{manufacturer}")
+    public ResponseEntity<List<MachineDto>> getMachinesByManufacturer(@PathVariable String manufacturer) {
+        List<MachineDto> machines = machineService.getMachinesByManufacturer(manufacturer);
+        return ResponseEntity.ok(machines);
     }
 
     @PostMapping
